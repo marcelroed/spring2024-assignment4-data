@@ -31,6 +31,8 @@ def test_exact_line_deduplication(tmp_path):
     for filepath in output_filepaths:
         with xopen(filepath) as f:
             output_file_contents = f.read()
+            print(f'{output_file_contents=}')
+            print(f'{deduplicated_documents=}')
             try:
                 deduplicated_documents.remove(output_file_contents)
             except ValueError:

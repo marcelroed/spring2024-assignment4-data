@@ -1,0 +1,21 @@
+my_label,model_label,confidence,notes
+ko,ko,0.982,
+pt,pt,0.959,
+pl,pl,0.939,
+zh,zh,0.958,
+es,es,0.870,
+en,en,0.396,"Has lots of formatting in it, which is likely why the model is confused"
+en,en,0.866,Formatting
+ja,ja,0.997,
+ru,ru,0.984,
+en,en,0.7835,Lots of foreign names and a link that leads to the French version of the page
+en,en,0.705,Formatting and web layout + search
+en,en,0.400,Contains outputs from SQL and linux directory listings
+ja,ja,0.997,
+nl,nl,0.563,Lots of image references with the word (Custom) next to them which will confuse with English
+zh,zh,0.975,
+en,en,0.743,Gaming stuff
+es,es,0.840,
+en,en,0.863,C++ tutorial
+en,en,0.586,Some random strings and formatting
+ru,ru,0.978,
