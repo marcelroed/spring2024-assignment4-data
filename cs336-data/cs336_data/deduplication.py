@@ -67,12 +67,12 @@ def min_hash_signature(set_of_n_grams: set, num_hashes: int) -> list[int]:
 def jaccard_similarity(a: set, b: set):
     return len(a & b) / len(a | b)
 
-def minhash_deduplication(in_paths, num_hashes, num_bands, ngrams, out_dir, jaccard_threshold: float | None = None):
+def minhash_deduplication(in_paths: list[Path | str], num_hashes: int, num_bands: int, ngrams: int, out_dir: str | Path, jaccard_threshold: float | None = None):
     if jaccard_threshold is None:
         jaccard_threshold = (1 / num_bands) ** (1 / band_size)
 
     band_size = num_hashes // num_bands
-    band_wise_bucket_dict = [defaultdict(list) for _ in range(num_bands)]
+    band_bucket = [defaultdict(list) for _ in range(num_bands)]
     for in_path in in_paths:
         with open(in_path, "r") as f:
             s = f.read()
@@ -86,19 +86,19 @@ def minhash_deduplication(in_paths, num_hashes, num_bands, ngrams, out_dir, jacc
             hash_end_idx = (band_idx + 1) * band_size
             key = tuple(min_hash_sig[hash_beg_idx:hash_end_idx])
             val = in_path
-            band_wise_bucket_dict[band_idx][key].append(val)
+            band_bucket[band_idx][key].append(val)
 
-    candidate_pairs = set()
-    for bucket_dict in band_wise_bucket_dict:
+    to_add_pairs = set()
+    for bucket_dict in band_bucket:
         for bucket in bucket_dict.values():
             if len(bucket) == 1:
                 continue
             for pair in combinations(bucket, 2):
-                candidate_pairs.add(pair)
+                to_add_pairs.add(pair)
 
 
-    similar_pairs = []
-    for pair in candidate_pairs:
+    similar = []
+    for pair in to_add_pairs:
         in_path1, in_path2 = pair
         with open(in_path1, "r") as f1:
             s1 = f1.read()
@@ -108,11 +108,11 @@ def minhash_deduplication(in_paths, num_hashes, num_bands, ngrams, out_dir, jacc
         n_gram_set2 = get_n_gram_set(s2, ngrams)
         true_similarity = jaccard_similarity(n_gram_set1, n_gram_set2)
         if true_similarity > jaccard_threshold:
-            similar_pairs.append(pair)
+            similar.append(pair)
 
     g = nx.Graph()
     g.add_nodes_from(in_paths)
-    g.add_edges_from(similar_pairs)
+    g.add_edges_from(similar)
     components: list[set[str]] = list(nx.connected_components(g))
 
     for component in components:

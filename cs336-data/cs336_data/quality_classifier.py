@@ -14,16 +14,12 @@ def train_fasttext_model(dataset_path: str | Path, model_path: str | Path, valid
     
 
 class QualityModel:
-    def __init__(self, model_path: str | Path):
+    def __init__(self, model_path: str | Path = 'data/fasttext-quality.bin'):
         self.model = load_model(str(model_path))
     
     def predict(self, text: str):
         label, prob = self.model.predict(text.replace('\n', ' '))
         label = label[0].replace('__label__', '')
-        if label == 'neg':
-            label = 'cc'
-        else:
-            label = 'wiki'
         return label, prob[0]
         
 

@@ -4,7 +4,7 @@ import numpy as np
 from fasttext import load_model
 from cs336_data.extract_text import iterwarc, extract_text_from_html_bytes
 
-class Model:
+class IdentifyLanguageModel:
     def __init__(self, path='data/lid.176.bin'):
         self.model = load_model(path)
 
@@ -33,7 +33,7 @@ def _get_fixed_random_warc_records(warc_path: str | Path, n_entries: int):
 
 def _run_language_identification():
     random_records = _get_fixed_random_warc_records('data/CC-MAIN-20180420081400-20180420101400-00118.warc.gz', n_entries=20)
-    identifier_model = Model()
+    identifier_model = IdentifyLanguageModel()
     for record in random_records:
         text = extract_text_from_html_bytes(record.reader.read())
         print(text)

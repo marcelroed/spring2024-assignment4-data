@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from typing import Any
 from cs336_data.extract_text import extract_text_from_html_bytes
-from cs336_data.identify_language import Model
+from cs336_data.identify_language import IdentifyLanguageModel
 from cs336_data.mask_pii import mask_emails, mask_phone_numbers, mask_ips
 from cs336_data.harmful_content import NSFWModel, ToxicSpeechModel
 from cs336_data.quality_filter import gopher_quality_filter
@@ -17,7 +17,7 @@ def run_extract_text_from_html_bytes(html_bytes: bytes) -> str | None:
 
 
 def run_identify_language(text: str) -> tuple[Any, float]:
-    model = Model()
+    model = IdentifyLanguageModel()
     return model.predict(text)
 
 
