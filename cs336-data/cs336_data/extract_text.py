@@ -1,3 +1,4 @@
+from pathlib import Path
 from resiliparse.extract.html2text import extract_plain_text
 from resiliparse.parse.encoding import detect_encoding
 import gzip
@@ -9,12 +10,17 @@ def extract_text_from_html_bytes(s: bytes) -> str:
     return extract_plain_text(decoded)
 
 
-def iterwarc(filename: str):
+def iterwarc(path: str | Path):
     """Iterate responses in a compressed WARC file."""
-    with open(filename, 'rb') as f:
+    with open(path, 'rb') as f:
         for record in ArchiveIterator(f):
             if record.headers['WARC-Type'] == 'response':
                 yield record
+
+
+def iterwarc_text(path: str | Path):
+    for record in iterwarc(path):
+        yield extract_text_from_html_bytes(record.reader.read())
 
 
 def run_extract_file(filename: str, limit=3) -> str:

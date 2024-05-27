@@ -28,10 +28,10 @@ def run_classify_samples():
         text = extract_text_from_html_bytes(record.reader.read())
         nsfw_label, nsfw_prob = nsfw_model.predict(text)
         toxic_label, toxic_prob = toxic_model.predict(text)
-        if (nsfw_label == 'nsfw' and nsfw_prob > 0.5): # or (toxic_label == 'toxic' and toxic_prob > 0.5):
-            print(text[:2000])
-            print(nsfw_label, nsfw_prob, toxic_label, toxic_prob)
-            input()
+        # if (nsfw_label == 'nsfw' and nsfw_prob > 0.5): # or (toxic_label == 'toxic' and toxic_prob > 0.5):
+        print(text[:2000])
+        print(nsfw_label, nsfw_prob, toxic_label, toxic_prob)
+        input()
 
 
 def main():

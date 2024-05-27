@@ -10,7 +10,7 @@ class IdentifyLanguageModel:
 
     def predict(self, text):
         label, prob = self.model.predict(text.replace('\n', ' '))
-        print(label, prob)
+        # print(label, prob)
         label = label[0].replace('__label__', '')
         return label, prob[0]
 

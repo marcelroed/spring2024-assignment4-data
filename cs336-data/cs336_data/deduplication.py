@@ -42,7 +42,7 @@ def normalize_for_jaccard(s: str):
     return s
 
 
-def get_n_gram_set(s: str, num_words_n_gram: int) -> set[str]:
+def n_gram_set_for(s: str, num_words_n_gram: int) -> set[str]:
     """Set of all n-grams in the input string."""
     words = s.split()
     n_grams = set()
@@ -68,17 +68,19 @@ def jaccard_similarity(a: set, b: set):
     return len(a & b) / len(a | b)
 
 def minhash_deduplication(in_paths: list[Path | str], num_hashes: int, num_bands: int, ngrams: int, out_dir: str | Path, jaccard_threshold: float | None = None):
+    # Default jaccard threshold
     if jaccard_threshold is None:
         jaccard_threshold = (1 / num_bands) ** (1 / band_size)
 
     band_size = num_hashes // num_bands
-    band_bucket = [defaultdict(list) for _ in range(num_bands)]
+    band_buckets = [defaultdict(list) for _ in range(num_bands)]
+
     for in_path in in_paths:
         with open(in_path, "r") as f:
             s = f.read()
 
         s = normalize_for_jaccard(s)
-        n_gram_set = get_n_gram_set(s, ngrams)
+        n_gram_set = n_gram_set_for(s, ngrams)
         min_hash_sig = min_hash_signature(n_gram_set, num_hashes)
 
         for band_idx in range(num_bands):
@@ -86,10 +88,10 @@ def minhash_deduplication(in_paths: list[Path | str], num_hashes: int, num_bands
             hash_end_idx = (band_idx + 1) * band_size
             key = tuple(min_hash_sig[hash_beg_idx:hash_end_idx])
             val = in_path
-            band_bucket[band_idx][key].append(val)
+            band_buckets[band_idx][key].append(val)
 
     to_add_pairs = set()
-    for bucket_dict in band_bucket:
+    for bucket_dict in band_buckets:
         for bucket in bucket_dict.values():
             if len(bucket) == 1:
                 continue
@@ -104,18 +106,20 @@ def minhash_deduplication(in_paths: list[Path | str], num_hashes: int, num_bands
             s1 = f1.read()
         with open(in_path2, "r") as f2:
             s2 = f2.read()
-        n_gram_set1 = get_n_gram_set(s1, ngrams)
-        n_gram_set2 = get_n_gram_set(s2, ngrams)
+        n_gram_set1 = n_gram_set_for(s1, ngrams)
+        n_gram_set2 = n_gram_set_for(s2, ngrams)
         true_similarity = jaccard_similarity(n_gram_set1, n_gram_set2)
         if true_similarity > jaccard_threshold:
             similar.append(pair)
 
+    # Find connected components
     g = nx.Graph()
     g.add_nodes_from(in_paths)
     g.add_edges_from(similar)
-    components: list[set[str]] = list(nx.connected_components(g))
+    components_sets: list[set[str]] = list(nx.connected_components(g))
 
-    for component in components:
+    # Only pick one file for each component
+    for component in components_sets:
         in_path = component.pop()
         out_path = f"{out_dir}/{Path(in_path).name}"
         file_copy(in_path, out_path)

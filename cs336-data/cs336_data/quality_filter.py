@@ -4,6 +4,18 @@ from logging import getLogger, basicConfig
 
 logger = getLogger(__name__)
 
+
+class GopherModel:
+    def __init__(self):
+        pass
+    
+    def predict(self, s: str):
+        keep = gopher_quality_filter(s)
+        if keep:
+            return 'keep', 1.0
+        else:
+            return 'remove', 1.0
+
 def gopher_quality_filter(s: str) -> bool:
     """Return True if the input string passes the quality filter, False otherwise."""
     nltk.download('punkt', quiet=True)

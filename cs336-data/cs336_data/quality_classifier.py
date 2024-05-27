@@ -28,7 +28,5 @@ def load_and_predict(text: str):
     return model.predict(text)
 
 
-
 if __name__ == '__main__':
-    pass
-    # train_fasttext_model(dataset_path='data/quality-dataset-train.txt', model_path='data/fasttext-quality.bin', validation_path='data/quality-dataset-valid.txt')
+    train_fasttext_model(dataset_path='data/quality-dataset-train.txt', model_path='data/fasttext-quality.bin', validation_path='data/quality-dataset-valid.txt')
