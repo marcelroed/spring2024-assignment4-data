@@ -11,6 +11,7 @@ from cs336_data.harmful_content import NSFWModel, ToxicSpeechModel
 from cs336_data.identify_language import IdentifyLanguageModel
 from cs336_data.quality_classifier import QualityModel, train_fasttext_model
 from cs336_data.quality_filter import gopher_quality_filter, GopherModel
+
     
 
 class PalomaLikeModel:
@@ -46,8 +47,8 @@ class Filterer:
         self.language_model = IdentifyLanguageModel()
         self.nsfw_model = NSFWModel()
         self.toxic_model = ToxicSpeechModel()
+        self.paloma_like_model = PalomaLikeModel()
         # self.quality_model = QualityModel()
-        # self.paloma_like_model = PalomaLikeModel()
         self.gopher_model = GopherModel()
         self.stats = defaultdict(Stats)
     
@@ -73,8 +74,10 @@ class Filterer:
             return False
         
     def show_stats(self):
+        out_str = []
         for k, v in self.stats.items():
-            print(f'{k}: {v.retained} retained, {v.removed} removed ({v.kept_ratio() * 100:.2f}% kept)')
+            out_str.append(f'{k}: {v.retained} retained, {v.removed} removed ({v.kept_ratio() * 100:.2f}% kept)')
+        print('\n'.join(out_str))
 
 
 def run_filter(warc_path: str | Path, limit=None):
@@ -84,9 +87,41 @@ def run_filter(warc_path: str | Path, limit=None):
         if filterer(text):
             out_texts.append(text)
     filterer.show_stats()
-    print(len(out_texts))
+    return out_texts
+
+
+def parallel_run_filter():
+    import concurrent.futures
+    import os
+    from tqdm import tqdm
+    def process_single_warc_file(input_path: str, output_path: str):
+        # TODO: read input path, process the input, and write the output to output_path
+        return output_path
+    # Set up the executor
+    num_cpus = len(os.sched_getaffinity(0))
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=num_cpus)
+    warc_filepaths = ["a.warc.gz", "b.warc.gz", "c.warc.gz"]
+    output_directory_path = "/path/to/output_directory/"
+    futures = []
+    for warc_filepath in warc_filepaths:
+        # For each WARC filepath, submit a job to the executor and get a future back
+        warc_filename = str(Path(warc_filepath).name)
+        future = executor.submit(
+            process_single_warc_file,
+            warc_filepath,
+            os.path.join(output_directory_path, warc_filepath)
+        )
+    # Store the futures
+    futures.append(future)
+    # Iterate over the completed futures as they finish, using a progress bar # to keep track of progress.
+    for future in tqdm(
+        concurrent.futures.as_completed(futures),
+        total=len(warc_filepaths),
+    ):
+        output_file = future.result()
+        print(f"Output file written: {output_file}")
 
 
 if __name__ == '__main__':
-    # train_fasttext_model(dataset_path='data/paloma-like-dataset-train.txt', model_path='data/paloma-like.bin', validation_path='data/paloma-like-dataset-valid.txt')
-    run_filter('data/CC-MAIN-20180420081400-20180420101400-00118.warc.gz', limit=10_000)
+    train_fasttext_model(dataset_path='data/paloma-like-dataset-train.txt', model_path='data/paloma-like.bin', validation_path='data/paloma-like-dataset-valid.txt')
+    # run_filter('data/CC-MAIN-20180420081400-20180420101400-00118.warc.gz', limit=10_000)
