@@ -44,7 +44,9 @@ def run_classify_toxic_speech(text: str) -> tuple[Any, float]:
 
 
 def run_classify_quality(text: str) -> tuple[Any, float]:
-    return load_and_predict(text)
+    label, score = load_and_predict(text)
+    label = 'cc' if label == 'neg' else 'wiki'
+    return label, score
 
 
 def run_gopher_quality_filter(text: str) -> bool:

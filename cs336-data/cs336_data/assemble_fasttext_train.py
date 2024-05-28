@@ -7,6 +7,7 @@ from random import shuffle
 import re
 import gzip
 from cs336_data.extract_text import iterwarc, extract_text_from_html_bytes, iterwarc_text
+from cs336_data.cc_filter import Filterer
 
 def ceildiv(a, b):
     return -(-a // b)
@@ -25,9 +26,10 @@ def load_all_jsonlines(dir: str | Path) -> Iterable[str]:
 def load_random_warc_entries(warc_dir: str | Path, n_entries: int):
     warc_files = list(Path(warc_dir).rglob('*.warc.filtered.gz'))
     entries_per_file = ceildiv(n_entries, len(warc_files))
+    filterer = Filterer()
 
     for warc_file in tqdm(warc_files, desc='Loading random WARC entries'):
-        yield from islice(filter(lambda s: len(s) > 10, map(lambda s: re.sub(MULTIPLE_WHITESPACE, ' ', s), iterwarc_text(warc_file))), entries_per_file)
+        yield from islice(filterer.filter_iterable(map(lambda s: re.sub(MULTIPLE_WHITESPACE, ' ', s), iterwarc_text(warc_file))), entries_per_file)
 
 def prepend_label(text: str, label: str):
     return f'__label__{label} {text}'

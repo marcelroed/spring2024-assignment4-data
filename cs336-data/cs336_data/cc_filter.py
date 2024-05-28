@@ -43,50 +43,56 @@ class Stats:
         return self.retained + self.removed
 
 class Filterer:
-    def __init__(self):
+    def __init__(self, include_paloma=False):
         self.language_model = IdentifyLanguageModel()
         self.nsfw_model = NSFWModel()
         self.toxic_model = ToxicSpeechModel()
-        self.paloma_like_model = PalomaLikeModel()
+        # self.paloma_like_model = PalomaLikeModel()
         # self.quality_model = QualityModel()
         self.gopher_model = GopherModel()
         self.stats = defaultdict(Stats)
+        self.model_args_list = [
+            (self.language_model, 'en', 0.9), (self.gopher_model, 'keep', 0.5), (self.nsfw_model, 'non-nsfw', 0.8), (self.toxic_model, 'non-toxic', 0.8)
+        ]
+        if include_paloma:
+            self.model_args_list.append((self.paloma_like_model, 'paloma', 0.5))
     
     def __call__(self, text):
-        for model_args in [(self.language_model, 'en', 0.9), (self.gopher_model, 'keep', 0.5), (self.nsfw_model, 'non-nsfw', 0.8), (self.toxic_model, 'non-toxic', 0.8)]:
+        for model_args in self.model_args_list:
             model_keep = self.use_model(*model_args, text)
             if not model_keep:
                 return False
         return True
     
+    def filter_iterable(self, it):
+        for text in it:
+            if self(text):
+                yield text
+    
     def use_model(self, model, keep_label, keep_threshold, text):
         stats = self.stats[model.__class__.__name__]
         label, prob = model.predict(text)
-        if label != keep_label:
-            prob = 1 - prob
-            label = keep_label
-        
-        if prob >= keep_threshold:
+        if label == keep_label and prob >= keep_threshold:
             stats.retained += 1
             return True
         else:
             stats.removed += 1
             return False
         
-    def show_stats(self):
+    def show_stats(self) -> str:
         out_str = []
         for k, v in self.stats.items():
             out_str.append(f'{k}: {v.retained} retained, {v.removed} removed ({v.kept_ratio() * 100:.2f}% kept)')
-        print('\n'.join(out_str))
+        return '\n'.join(out_str)
 
 
 def run_filter(warc_path: str | Path, limit=None):
-    filterer = Filterer()
+    filterer = Filterer(include_paloma=True)
     out_texts = []
     for text in islice(iterwarc_text(warc_path), limit):
         if filterer(text):
             out_texts.append(text)
-    filterer.show_stats()
+    print(f'WARC: {warc_path.name}\n{filterer.show_stats()}')
     return out_texts
 
 
@@ -123,5 +129,5 @@ def parallel_run_filter():
 
 
 if __name__ == '__main__':
-    train_fasttext_model(dataset_path='data/paloma-like-dataset-train.txt', model_path='data/paloma-like.bin', validation_path='data/paloma-like-dataset-valid.txt')
+    train_fasttext_model(dataset_path='data/paloma-like-train.txt', model_path='data/paloma-like.bin', validation_path=None)
     # run_filter('data/CC-MAIN-20180420081400-20180420101400-00118.warc.gz', limit=10_000)
