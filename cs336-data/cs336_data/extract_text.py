@@ -3,6 +3,8 @@ from resiliparse.extract.html2text import extract_plain_text
 from resiliparse.parse.encoding import detect_encoding
 import gzip
 from fastwarc import ArchiveIterator, WarcRecord
+from contextlib import nullcontext
+from typing import BinaryIO
 
 def extract_text_from_html_bytes(s: bytes) -> str:
     encoding = detect_encoding(s)
@@ -12,13 +14,16 @@ def extract_text_from_html_bytes(s: bytes) -> str:
 
 def iterwarc(path: str | Path):
     """Iterate responses in a compressed WARC file."""
-    with open(path, 'rb') as f:
-        for record in ArchiveIterator(f):
-            if record.headers['WARC-Type'] == 'response':
-                yield record
+    if isinstance(path, (str, Path)):
+        path = open(path, 'rb')
+    for record in ArchiveIterator(path):
+        if record.headers['WARC-Type'] == 'response':
+            yield record
 
 
-def iterwarc_text(path: str | Path):
+def iterwarc_text(path: str | Path | BinaryIO):
+    if isinstance(path, (str, Path)):
+        path = open(path, 'rb')
     for record in iterwarc(path):
         yield extract_text_from_html_bytes(record.reader.read())
 
