@@ -104,7 +104,7 @@ class Filterer:
         return '\n'.join(out_str)
 
 
-def run_filter(warc_path: str | Path | BinaryIO, limit=None, id: int = 0):
+def run_filter(warc_path: str | Path | BinaryIO, limit=None, id: int = 0, invert=False):
     filterer = Filterer(include_paloma=True)
     if id == 0:
         it = tqdm(iterwarc_text(warc_path), smoothing=0.1, desc='Filtering WARC')
@@ -112,7 +112,7 @@ def run_filter(warc_path: str | Path | BinaryIO, limit=None, id: int = 0):
         it = iterwarc_text(warc_path)
 
     for text in islice(it, limit):
-        if filterer(text):
+        if filterer(text) ^ invert:
             yield MULTIPLE_WHITESPACE.sub(' ', text)
     print(f'WARC: {warc_path}\n{filterer.show_stats()}')
 
@@ -174,5 +174,7 @@ def parallel_run_filter():
 
 if __name__ == '__main__':
     # train_fasttext_model(dataset_path='data/paloma-like-train.txt', model_path='data/paloma-like.bin', validation_path='data/paloma-like-train.txt')
-    # run_filter('data/CC-MAIN-20180420081400-20180420101400-00118.warc.gz', limit=10_000)
-    parallel_run_filter()
+    for s in run_filter('data/CC-MAIN-20231211112008-20231211142008-00162.warc.filtered.gz', limit=10_000, invert=True): 
+        print(s)
+        input()
+    # parallel_run_filter()
